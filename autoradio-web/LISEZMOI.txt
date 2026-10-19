@@ -1,0 +1,33 @@
+AUTORADIO VINTAGE - version autonome (web / PWA)
+================================================
+Aucun logiciel a installer : c'est un site statique. Il suffit de le mettre en ligne,
+puis d'ouvrir l'adresse sur n'importe quel appareil connecte a Internet.
+
+FICHIERS (tous a mettre au meme endroit) :
+  index.html, manifest.webmanifest, sw.js, icon-192.png, icon-512.png,
+  icon-maskable-512.png, apple-touch-icon.png, favicon.png
+
+METTRE EN LIGNE (gratuit, 2 minutes) - il faut une adresse HTTPS :
+  * Netlify Drop : app.netlify.com/drop -> glisser le DOSSIER decompresse. Adresse fournie aussitot.
+  * Cloudflare Pages : "Direct Upload" -> glisser le dossier.
+  * GitHub Pages : creer un depot, y deposer les fichiers, Settings > Pages > branche main.
+  (Ne pas ouvrir index.html par double-clic pour l'installer : l'installation exige https.)
+
+INSTALLER SUR L'APPAREIL
+  * Android / Chrome : menu (3 points) > "Installer l'application".
+  * iPhone / iPad / Safari : bouton Partager > "Sur l'ecran d'accueil".
+  * PC / Chrome ou Edge : icone d'installation dans la barre d'adresse.
+
+CE QUI EST SAUVEGARDE SUR CHAQUE APPAREIL
+  Memoires M1-M20 (appui long pour memoriser), volume, egaliseur, derniere station.
+
+DISPOSITIONS
+  Telephone en hauteur : mise en page verticale. Paysage, tablette, PC : face avant 15x8.
+  Ecran tactile : zones larges, clavier a l'ecran. Souris : comportement classique.
+
+LIMITES
+  * Certaines radios n'autorisent pas l'analyse audio : elles jouent quand meme, mais l'egaliseur
+    et le spectre sont alors inactifs pour ce flux.
+  * Un flux en http simple est bloque par les navigateurs sur une page https : l'appli essaie
+    sa version https ; si elle n'existe pas, la station est indisponible.
+  * Sur iPhone, le son se coupe si l'ecran se verrouille selon la version d'iOS.

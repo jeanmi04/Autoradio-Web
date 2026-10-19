@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="description" content="Autoradio vintage : FM, AM, DAB et radios du monde entier, égaliseur 9 bandes, mémoires. Fonctionne sur téléphone, tablette et ordinateur.">
+<meta name="theme-color" content="#0b0f15">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Autoradio">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Autoradio</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #0f141c;
+  --surface: #1a2130;
+  --surface2: #242c3d;
+  --surface3: #2c3549;
+  --border: #3a4558;
+  --border-soft: #2a3345;
+  --text: #f0f2f5;
+  --text-dim: #a0a8b8;
+  --text-mute: #6e7890;
+  --accent: #4dffa8;
+  --accent-dim: #1fa561;
+  --amber: #ffc45c;
+  --blue: #5b9fff;
+  --red: #ff5a6a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  overflow: hidden;
+  background: #0b0f15;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text);
+  user-select: none;
+  -webkit-user-select: none;
+}
+body {
+  background-image:
+    radial-gradient(ellipse 80% 55% at 50% 0%, #17233a 0%, transparent 60%),
+    radial-gradient(ellipse 45% 35% at 85% 90%, rgba(176,122,255,.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 12% 85%, rgba(91,159,255,.07) 0%, transparent 60%);
+}
+
+/* La face avant fait 680×450 et se met à l'échelle pour remplir la fenêtre */
+#stage {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 750px; height: 400px;
+  transform: translate(-50%, -50%);
+}
+
+.chassis {
+  position: relative;
+  width: 750px; height: 400px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid #3a4558;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.05), transparent 16%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.014) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #232b3a 0%, #181e2b 50%, #10151e 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.09),
+    inset 0 0 0 1px rgba(0,0,0,.45),
+    0 20px 44px rgba(0,0,0,.6);
+  display: grid;
+  grid-template-rows: 110px 24px 40px minmax(0, 1fr) 52px;
+  gap: 7px;
+}
+/* petites vis décoratives */
+.screw {
+  position: absolute;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #5a6478, #1b2130 70%);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.5);
+}
+.screw::after {
+  content: ''; position: absolute; left: 1px; right: 1px; top: 2.5px; height: 1px;
+  background: rgba(0,0,0,.55); transform: rotate(35deg);
+}
+.screw.tl { top: 4px; left: 4px; } .screw.tr { top: 4px; right: 4px; }
+.screw.bl { bottom: 4px; left: 4px; } .screw.br { bottom: 4px; right: 4px; }
+
+/* ---------- Rangée 1 : afficheur + droite ---------- */
+.top {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 12px;
+  min-height: 0;
+}
+
+.disp {
+  position: relative;
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 8px 14px 8px;
+  border-radius: 9px;
+  border: 1px solid #1a3a28;
+  background:
+    radial-gradient(ellipse 90% 80% at 50% 40%, rgba(20,60,40,.55) 0%, transparent 70%),
+    #070b09;
+  box-shadow:
+    inset 0 0 28px rgba(0,0,0,.55),
+    inset 0 0 44px rgba(40,180,100,.08),
+    0 0 0 1px rgba(77,255,168,.12),
+    0 0 16px rgba(77,255,168,.2),
+    0 0 32px rgba(77,255,168,.07);
+  overflow: hidden;
+}
+.disp::before {
+  content: ''; position: absolute; top: 0; left: 6%; right: 6%; height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(77,255,168,.4) 15%, rgba(77,255,168,.95) 50%, rgba(77,255,168,.4) 85%, transparent);
+  box-shadow: 0 0 8px rgba(77,255,168,.7), 0 0 18px rgba(77,255,168,.4);
+  animation: backlight 2.8s ease-in-out infinite alternate;
+}
+@keyframes backlight { from { opacity: .65; filter: brightness(.85); } to { opacity: 1; filter: brightness(1.2); } }
+.disp > * { position: relative; z-index: 1; }
+.meta {
+  display: flex; justify-content: space-between;
+  font-size: 10px; font-weight: 600; letter-spacing: .14em; color: var(--text-mute);
+}
+.meta .on { color: var(--accent); text-shadow: 0 0 8px rgba(77,255,168,.55); }
+.freq {
+  font-family: 'JetBrains Mono', monospace; font-weight: 600;
+  font-size: 40px; line-height: 1; text-align: center; letter-spacing: .03em;
+  color: #5fffb0;
+  text-shadow: 0 0 6px rgba(77,255,168,.9), 0 0 18px rgba(77,255,168,.55), 0 0 32px rgba(77,255,168,.25);
+}
+.sname {
+  font-size: 13px; font-weight: 600; text-align: center; letter-spacing: .04em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: #ffc86a;
+  text-shadow: 0 0 6px rgba(255,184,77,.6), 0 0 14px rgba(255,184,77,.25);
+}
+.now { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
+.now .lbl {
+  font-size: 9px; font-weight: 700; letter-spacing: .1em; color: var(--accent);
+  border: 1px solid rgba(77,255,168,.45); background: rgba(77,255,168,.07);
+  padding: 2px 6px; border-radius: 4px; box-shadow: 0 0 8px rgba(77,255,168,.25);
+}
+.now .trk {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #c8d0dc;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+
+.right { display: flex; flex-direction: column; gap: 5px; min-width: 0; min-height: 0; }
+.eq-row {
+  height: 36px; padding: 4px 6px 0; display: flex; align-items: flex-end;
+  background: #090d13; border: 1px solid var(--border-soft); border-radius: 7px;
+  box-shadow: inset 0 0 12px rgba(0,0,0,.6);
+}
+.eq { display: flex; align-items: flex-end; gap: 2px; width: 100%; height: 32px; }
+.eq-bar {
+  flex: 1; min-width: 2px; min-height: 2px; border-radius: 1.5px 1.5px 0 0;
+  background: linear-gradient(to top, var(--accent-dim), var(--accent)); opacity: .9;
+  transition: height .06s linear;
+}
+.eq-presets { display: flex; flex-wrap: wrap; gap: 3px; }
+.eq-presets .eq-btn { height: 18px; padding: 0 5px; font-size: 9px; letter-spacing: 0; }
+.eq-btn, .tag {
+  font-family: inherit; font-weight: 500; font-size: 10px; letter-spacing: .02em;
+  height: 19px; padding: 0 7px; border-radius: 4px; cursor: pointer; white-space: nowrap;
+  background: var(--surface2); border: 1px solid var(--border-soft); color: var(--text-mute);
+  transition: all .12s;
+}
+.eq-btn:hover, .tag:hover {
+  color: var(--blue); border-color: rgba(91,159,255,.5); box-shadow: 0 0 8px rgba(91,159,255,.28);
+}
+.eq-btn.active {
+  background: rgba(77,255,168,.13); border-color: rgba(77,255,168,.55); color: var(--accent);
+  box-shadow: 0 0 10px rgba(77,255,168,.35);
+}
+.search-row { display: flex; gap: 5px; margin-top: auto; }
+.search-input {
+  flex: 1; min-width: 0; height: 24px; padding: 0 10px;
+  font-family: inherit; font-size: 11px; color: var(--text); outline: none;
+  background: var(--bg); border: 1px solid var(--border-soft); border-radius: 6px;
+  user-select: text; -webkit-user-select: text;
+}
+.search-input::placeholder { color: var(--text-mute); }
+.search-input:focus { border-color: rgba(77,255,168,.45); box-shadow: 0 0 10px rgba(77,255,168,.15); }
+.search-btn {
+  font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  height: 24px; padding: 0 14px; border-radius: 6px; cursor: pointer;
+  background: var(--surface3); border: 1px solid var(--border); color: var(--text-dim);
+  transition: all .12s;
+}
+.search-btn:hover { color: var(--accent); border-color: rgba(77,255,168,.5); box-shadow: 0 0 10px rgba(77,255,168,.25); }
+
+/* ---------- Rangée 2 : filtres rapides + flèches ---------- */
+.tagbar { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.tags {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center; gap: 4px;
+  overflow-x: auto; scrollbar-width: none;
+  padding: 0 1px;
+}
+.tags::-webkit-scrollbar { display: none; }
+.tags.fr { -webkit-mask-image: linear-gradient(90deg, #000 0, #000 92%, transparent 100%); mask-image: linear-gradient(90deg, #000 0, #000 92%, transparent 100%); }
+.tags.fl { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 100%); mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 100%); }
+.tags.fl.fr { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 92%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 92%, transparent 100%); }
+.tag { height: 22px; padding: 0 10px; flex-shrink: 0; background: transparent; }
+.tag.active { color: var(--blue); border-color: rgba(91,159,255,.55); background: rgba(91,159,255,.12); }
+.tbtn {
+  flex-shrink: 0; width: 28px; height: 22px; border-radius: 5px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit; font-size: 15px; font-weight: 700; line-height: 1; padding-bottom: 2px;
+  background: var(--surface3); border: 1px solid var(--border); color: var(--blue);
+  transition: all .12s;
+}
+.tbtn:hover { background: rgba(91,159,255,.16); border-color: var(--blue); color: #8bb8ff; box-shadow: 0 0 9px rgba(91,159,255,.3); }
+.tbtn:active { transform: scale(.93); }
+.tbtn.off { opacity: .3; pointer-events: none; }
+
+/* ---------- Rangée 3 : mémoires ---------- */
+.mem { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); grid-template-rows: repeat(2, 18px); gap: 4px; height: 40px; }
+.mbtn {
+  height: 18px; min-height: 0;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  background: var(--surface2); border: 1px solid var(--border-soft); border-radius: 5px;
+  cursor: pointer; transition: all .12s; overflow: hidden; padding: 0 3px;
+}
+.mbtn .n { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: var(--text-dim); }
+.mbtn .f { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mbtn:hover { border-color: rgba(91,159,255,.45); background: var(--surface3); box-shadow: 0 0 8px rgba(91,159,255,.22); }
+.mbtn.active {
+  background: rgba(77,255,168,.14); border-color: rgba(77,255,168,.6);
+  box-shadow: 0 0 12px rgba(77,255,168,.35), inset 0 0 8px rgba(77,255,168,.1);
+}
+.mbtn.active .n, .mbtn.active .f { color: var(--accent); }
+.mbtn.empty { opacity: .45; }
+
+/* ---------- Rangée 4 : liste des stations ---------- */
+.list {
+  display: flex; flex-direction: column; min-height: 0;
+  background: var(--surface); border: 1px solid var(--border-soft); border-radius: 9px; overflow: hidden;
+}
+.list-h {
+  display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+  padding: 0 12px; height: 22px;
+  font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--text-mute);
+  background: rgba(255,255,255,.025); border-bottom: 1px solid var(--border-soft);
+}
+.list-h #panelCount { color: var(--amber); font-family: 'JetBrains Mono', monospace; }
+.results { flex: 1; min-height: 0; overflow-y: auto; }
+.results::-webkit-scrollbar { width: 6px; }
+.results::-webkit-scrollbar-thumb { background: #34405a; border-radius: 3px; }
+.results::-webkit-scrollbar-track { background: transparent; }
+.ritem {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 0 12px; height: 26px; cursor: pointer;
+  font-size: 12px; border-bottom: 1px solid rgba(42,51,69,.6); border-left: 3px solid transparent;
+  transition: background .1s;
+}
+.ritem .rn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ritem .rc { flex-shrink: 0; color: var(--text-mute); font-size: 10px; }
+.ritem:hover { background: var(--surface2); }
+.ritem.active { background: rgba(77,255,168,.08); color: var(--accent); border-left-color: var(--accent); }
+.results .empty, .results .loading { padding: 26px; text-align: center; color: var(--text-mute); font-size: 12px; }
+
+/* ---------- Rangée 5 : commandes ---------- */
+.ctrl {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 0 16px;
+  background: rgba(0,0,0,.24); border: 1px solid #222a3a; border-radius: 11px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+}
+.kw { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 52px; }
+.knob {
+  position: relative; width: 32px; height: 32px; border-radius: 50%; cursor: grab;
+  background: radial-gradient(circle at 35% 30%, #3e4558, #1b2030 55%, #0e1118);
+  border: 1.5px solid #3a4258;
+  box-shadow: 0 3px 8px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.1);
+}
+.knob::after {
+  content: ''; position: absolute; top: 3px; left: 50%; transform: translateX(-50%);
+  width: 3px; height: 9px; border-radius: 2px; background: var(--amber);
+  box-shadow: 0 0 6px rgba(255,184,77,.6);
+}
+.klr { display: flex; gap: 4px; align-items: baseline; }
+.kl { font-size: 8px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-mute); }
+.kv { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--amber); }
+
+.rbtn {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .04em;
+  background: var(--surface2); border: 1.5px solid var(--border); color: var(--text-mute);
+  transition: all .15s;
+}
+.rbtn:hover { color: var(--blue); border-color: rgba(91,159,255,.55); box-shadow: 0 0 10px rgba(91,159,255,.3); }
+.rbtn.pwr.on { border-color: var(--red); color: var(--red); box-shadow: 0 0 12px rgba(255,90,106,.45); }
+.rbtn.play { width: 38px; height: 38px; font-size: 13px; }
+.rbtn.play.on { border-color: rgba(77,255,168,.6); color: var(--accent); box-shadow: 0 0 14px rgba(77,255,168,.38); }
+.rbtn.nav { width: 28px; height: 28px; font-size: 14px; }
+
+.mid { display: flex; align-items: center; gap: 8px; }
+.bands {
+  display: flex; background: var(--bg); border: 1px solid var(--border-soft);
+  border-radius: 7px; overflow: hidden;
+}
+.band {
+  height: 28px; padding: 0 11px; border: none; background: transparent; cursor: pointer;
+  font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .06em; color: var(--text-mute);
+  transition: all .12s;
+}
+.band + .band { border-left: 1px solid var(--border-soft); }
+.band:hover { color: var(--blue); }
+.band.active {
+  background: rgba(77,255,168,.13); color: var(--accent);
+  text-shadow: 0 0 8px rgba(77,255,168,.45); box-shadow: inset 0 0 8px rgba(77,255,168,.08);
+}
+
+/* ===================== TACTILE ===================== */
+html, body { touch-action: pan-x pan-y; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; overscroll-behavior: none; }
+.results { touch-action: pan-y; overscroll-behavior: contain; }
+.tags { touch-action: pan-x; overscroll-behavior: contain; }
+.knob { touch-action: none; }
+.eq-sel, .kbd { display: none; }
+
+/* sélecteur d'égaliseur (mode tactile) */
+.eq-sel { gap: 5px; height: 34px; }
+.eq-sel button {
+  width: 52px; flex-shrink: 0; border-radius: 8px; cursor: pointer;
+  background: var(--surface3); border: 1px solid var(--border); color: var(--blue);
+  font-family: inherit; font-size: 22px; font-weight: 700; line-height: 1; padding-bottom: 3px;
+}
+.eq-sel .eq-name {
+  flex: 1; display: flex; align-items: center; justify-content: center; border-radius: 8px;
+  background: var(--bg); border: 1px solid rgba(77,255,168,.4); color: var(--accent);
+  font-size: 13px; font-weight: 700; letter-spacing: .14em;
+  box-shadow: 0 0 10px rgba(77,255,168,.15);
+}
+.eq-sel .eq-name::before { content: "EQ"; color: var(--text-mute); font-size: 9px; margin-right: 9px; letter-spacing: .1em; }
+
+/* clavier à l'écran */
+.kbd {
+  position: absolute; left: 12px; right: 12px; top: 128px; bottom: 12px; z-index: 30;
+  flex-direction: column; gap: 5px; padding: 8px;
+  background: rgba(10,14,21,.98); border: 1px solid var(--border); border-radius: 11px;
+  box-shadow: 0 -10px 28px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.kbd.open { display: flex; }
+.krow { display: flex; gap: 5px; flex: 1; min-height: 0; }
+.key {
+  flex: 1; min-width: 0; border-radius: 8px; cursor: pointer;
+  background: var(--surface2); border: 1px solid var(--border-soft); color: var(--text);
+  font-family: inherit; font-size: 17px; font-weight: 600;
+}
+.key:active { background: rgba(77,255,168,.22); border-color: var(--accent); color: var(--accent); }
+.key.wide { flex: 1.6; color: var(--amber); }
+.key.space { flex: 6; font-size: 11px; letter-spacing: .2em; color: var(--text-mute); }
+.key.close { flex: 1.6; color: var(--red); }
+.key.go { flex: 2.4; color: var(--accent); border-color: rgba(77,255,168,.55); background: rgba(77,255,168,.1); letter-spacing: .1em; }
+body.kbd-open .search-input { border-color: var(--accent); box-shadow: 0 0 12px rgba(77,255,168,.3); }
+
+body.touch .chassis { grid-template-rows: 110px 38px 38px minmax(0, 1fr) 56px; gap: 6px; }
+body.touch .eq-row { height: 28px; padding: 3px 6px 0; }
+body.touch .eq { height: 24px; }
+body.touch .eq-presets { display: none; }
+body.touch .eq-sel { display: flex; }
+body.touch .search-row { height: 38px; margin-top: 0; }
+body.touch .search-input { height: 38px; font-size: 15px; border-radius: 8px; }
+body.touch .search-btn { height: 38px; padding: 0 20px; font-size: 13px; border-radius: 8px; }
+body.touch .tag { height: 34px; padding: 0 16px; font-size: 13px; border-radius: 8px; }
+body.touch .tags { gap: 6px; }
+body.touch .tbtn { width: 50px; height: 34px; font-size: 22px; border-radius: 8px; }
+body.touch .mem { grid-template-columns: 50px repeat(10, minmax(0, 1fr)); grid-template-rows: 38px; height: 38px; gap: 4px; }
+body.touch .mbtn { height: 38px; flex-direction: column; gap: 0; border-radius: 7px; }
+body.touch .mbtn .n { font-size: 13px; line-height: 1.1; }
+body.touch .mbtn .f { font-size: 9px; line-height: 1.1; }
+body.touch .mbtn.pg { border-color: rgba(91,159,255,.5); }
+body.touch .mbtn.pg .n { color: var(--blue); }
+body.touch .list-h { height: 20px; }
+body.touch .ritem { height: 40px; font-size: 14px; padding: 0 14px; }
+body.touch .ritem .rc { font-size: 11px; }
+body.touch .results::-webkit-scrollbar { width: 10px; }
+body.touch .results::-webkit-scrollbar-thumb { background: #46557a; border-radius: 5px; }
+body.touch .kw { width: 64px; }
+body.touch .knob { width: 38px; height: 38px; }
+body.touch .knob::after { top: 4px; height: 11px; width: 4px; }
+body.touch .rbtn { width: 46px; height: 46px; font-size: 12px; }
+body.touch .rbtn.play { width: 52px; height: 52px; font-size: 16px; }
+body.touch .rbtn.nav { width: 46px; height: 46px; font-size: 22px; padding-bottom: 3px; }
+body.touch .band { height: 42px; padding: 0 15px; font-size: 12px; }
+body.touch button:active, body.touch .mbtn:active, body.touch .ritem:active, body.touch .tag:active { filter: brightness(1.5); }
+
+/* ============ PORTRAIT (téléphones) : 420 x 760, utilisé quand il donne un plus grand rendu ============ */
+body.portrait #stage, body.portrait .chassis { width: 420px; height: 760px; }
+body.portrait .chassis { grid-template-rows: 238px 44px 88px minmax(0, 1fr) 124px; gap: 7px; }
+body.portrait .top { grid-template-columns: 1fr; grid-template-rows: 120px 110px; gap: 8px; }
+body.portrait .tag { height: 40px; }
+body.portrait .tbtn { height: 40px; width: 52px; }
+body.portrait .mem { grid-template-columns: 56px repeat(5, minmax(0, 1fr)); grid-template-rows: 42px 42px; height: 88px; }
+body.portrait .mbtn { height: 42px; }
+body.portrait .mbtn.pg { grid-row: span 2; height: auto; }
+body.portrait .ritem { height: 44px; }
+body.portrait .ctrl { flex-wrap: wrap; align-content: center; padding: 6px 12px; gap: 6px 4px; }
+body.portrait .bands { order: -1; width: 100%; }
+body.portrait .band { flex: 1; height: 42px; padding: 0; }
+body.portrait .kbd { top: auto; height: 300px; }
+body.portrait .key { font-size: 16px; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div class="chassis">
+    <span class="screw tl"></span><span class="screw tr"></span>
+    <span class="screw bl"></span><span class="screw br"></span>
+
+    <!-- Rangée 1 -->
+    <div class="top">
+      <div class="disp">
+        <div class="meta">
+          <span id="bandMeta">FM STEREO</span>
+          <span id="statusMeta">OFF</span>
+        </div>
+        <div class="freq" id="freq">88.5</div>
+        <div class="sname" id="sname">— STANDBY —</div>
+        <div class="now">
+          <span class="lbl">NOW</span>
+          <span class="trk" id="npTrack">— — —</span>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="eq-row"><div class="eq" id="eq"></div></div>
+        <div class="eq-presets" id="eqPresets"></div>
+        <div class="eq-sel" id="eqSel">
+          <button id="eqPrev" title="Égaliseur précédent">‹</button>
+          <div class="eq-name" id="eqName">FLAT</div>
+          <button id="eqNext" title="Égaliseur suivant">›</button>
+        </div>
+        <div class="search-row">
+          <input class="search-input" id="searchInput" placeholder="Pays, genre, artiste…" autocomplete="off" spellcheck="false">
+          <button class="search-btn" id="searchBtn">GO</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rangée 2 -->
+    <div class="tagbar">
+      <button class="tbtn" id="tagLeft" title="Défiler vers la gauche (maintenir = défilement continu)">‹</button>
+      <div class="tags" id="quickTags"></div>
+      <button class="tbtn" id="tagRight" title="Défiler vers la droite (maintenir = défilement continu)">›</button>
+    </div>
+
+    <!-- Rangée 3 -->
+    <div class="mem" id="presets"></div>
+
+    <!-- Rangée 4 -->
+    <div class="list">
+      <div class="list-h"><span id="panelTitle">Stations</span><span id="panelCount"></span></div>
+      <div class="results" id="results"></div>
+    </div>
+
+    <!-- Rangée 5 -->
+    <div class="ctrl">
+      <div class="kw">
+        <div class="knob" id="volKnob"></div>
+        <div class="klr"><span class="kl">Vol</span><span class="kv" id="volVal">70</span></div>
+      </div>
+      <button class="rbtn pwr" id="pwrBtn" title="Marche / arrêt">PWR</button>
+      <div class="bands">
+        <button class="band active" data-band="fm">FM</button>
+        <button class="band" data-band="am">AM</button>
+        <button class="band" data-band="dab">DAB</button>
+        <button class="band" data-band="world">WORLD</button>
+      </div>
+      <div class="mid">
+        <button class="rbtn nav" id="prevBtn" title="Station précédente">‹</button>
+        <button class="rbtn play" id="playBtn" title="Lecture / pause">▶</button>
+        <button class="rbtn nav" id="nextBtn" title="Station suivante">›</button>
+      </div>
+      <div class="kw">
+        <div class="knob" id="tuneKnob"></div>
+        <div class="klr"><span class="kl">Tune</span><span class="kv" id="tuneVal">88.5</span></div>
+      </div>
+    </div>
+
+    <!-- Clavier à l'écran (mode tactile) -->
+    <div class="kbd" id="kbd"></div>
+  </div>
+</div>
+
+<audio id="audio" crossorigin="anonymous" preload="none"></audio>
+<audio id="audio2" preload="none"></audio>
+
+<script>
+const PRESETS=[
+{name:"181.FM Super 70s",url:"https://listen.181fm.com/181-70s_128k.mp3",freq:"88.5",country:"USA",band:"fm",tags:"70s"},
+{name:"181.FM Awesome 80s",url:"https://listen.181fm.com/181-awesome80s_128k.mp3",freq:"89.3",country:"USA",band:"fm",tags:"80s"},
+{name:"SomaFM Underground 80s",url:"https://ice3.somafm.com/u80s-128-mp3",freq:"91.1",country:"USA",band:"fm",tags:"synthpop"},
+{name:"1.FM Absolute 70s",url:"https://strm112.1.fm/70s_mobile_mp3",freq:"93.5",country:"CH",band:"fm",tags:"70s"},
+{name:"80s80s Radio",url:"https://80s80s.stream.laut.fm/80s80s",freq:"95.7",country:"DE",band:"fm",tags:"80s"},
+{name:"Nostalgie France",url:"https://media-ice.musicradio.com/NostalgieFR",freq:"90.4",country:"FR",band:"world",tags:"70s 80s"},
+{name:"181.FM Good Time Oldies",url:"https://listen.181fm.com/181-goodtime_128k.mp3",freq:"1050",country:"USA",band:"am",tags:"oldies"},
+{name:"Radio Paradise Rock",url:"https://stream.radioparadise.com/rock-128",freq:"96.3",country:"USA",band:"fm",tags:"rock"},
+{name:"Antenne Bayern 80er",url:"https://stream.antenne.de/80er-hits/stream/mp3",freq:"97.1",country:"DE",band:"world",tags:"80s"},
+{name:"Classic Hits",url:"https://streaming.live365.com/a05753",freq:"99.9",country:"USA",band:"world",tags:"hits"},
+{name:"BBC Radio 2",url:"https://stream.live.vc.bbcmedia.co.uk/bbc_radio_two",freq:"DAB1",country:"UK",band:"dab",tags:"hits"},
+{name:"BBC Radio 6 Music",url:"https://stream.live.vc.bbcmedia.co.uk/bbc_6music",freq:"DAB2",country:"UK",band:"dab",tags:"alt"},
+{name:"FIP France",url:"https://icecast.radiofrance.fr/fip-midfi.mp3",freq:"DAB3",country:"FR",band:"dab",tags:"eclectic"},
+{name:"NPO Radio 2",url:"https://icecast.omroep.nl/radio2-bb-mp3",freq:"DAB4",country:"NL",band:"dab",tags:"hits"},
+{name:"Radio Swiss Pop",url:"https://stream.srg-ssr.ch/m/rsp/mp3_128",freq:"DAB5",country:"CH",band:"dab",tags:"pop"}
+];
+const EQ_PRESETS={FLAT:[0,0,0,0,0,0,0,0,0],ROCK:[5,4,3,1,-1,1,3,4,4],POP:[-1,2,4,4,2,0,-1,-1,-1],JAZZ:[3,2,0,1,-1,1,2,3,3],CLASSIC:[4,3,2,0,-1,0,2,3,4],BASS:[7,6,4,2,0,-2,-3,-3,-3],TREBLE:[-3,-2,-1,0,1,3,5,6,6],VOCAL:[-2,-1,0,2,4,4,2,0,-1],DISCO:[5,4,1,0,1,3,4,3,2],TRANCE:[4,3,0,-2,1,4,6,5,4],DANCE:[6,5,2,0,1,3,5,4,3],TECHNO:[5,4,1,-1,0,2,5,6,5]};
+const EQ_FREQS=[60,170,310,600,1000,3000,6000,12000,14000];
+const QUICK=[{label:"TOP",type:"top",value:""},{label:"70s",type:"tag",value:"70s"},{label:"80s",type:"tag",value:"80s"},{label:"Disco",type:"tag",value:"disco"},{label:"Rock",type:"tag",value:"classic rock"},{label:"Synth",type:"tag",value:"synthpop"},{label:"Jazz",type:"tag",value:"jazz"},{label:"Trance",type:"tag",value:"trance"},{label:"Techno",type:"tag",value:"techno"},{label:"Dance",type:"tag",value:"dance"},{label:"FR",type:"country",value:"FR"},{label:"US",type:"country",value:"US"},{label:"UK",type:"country",value:"GB"},{label:"DE",type:"country",value:"DE"},{label:"IT",type:"country",value:"IT"},{label:"ES",type:"country",value:"ES"},{label:"JP",type:"country",value:"JP"},{label:"BR",type:"country",value:"BR"},{label:"NL",type:"country",value:"NL"}];
+let memPage=0;const MEMORY_COUNT=20;let memories=new Array(MEMORY_COUNT).fill(null);let activeMemory=-1;
+let power=false,playing=false,volume=.7,currentBand="fm",current=PRESETS[0],stationList=[...PRESETS];
+let audioCtx=null,analyser=null,dataArray=null,sourceNode=null,eqFilters=[],currentEq="FLAT";const bars=[];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const audioCors=$("audio"),audioPlain=$("audio2"),freqEl=$("freq"),snameEl=$("sname"),statusEl=$("statusMeta"),bandMeta=$("bandMeta"),volVal=$("volVal"),tuneVal=$("tuneVal"),pwrBtn=$("pwrBtn"),playBtn=$("playBtn"),presetsEl=$("presets"),resultsEl=$("results"),searchInput=$("searchInput"),searchBtn=$("searchBtn"),panelTitle=$("panelTitle"),panelCount=$("panelCount"),eqEl=$("eq"),npTrack=$("npTrack");
+
+/* ---- Mode tactile : auto (écran tactile détecté) ou forcé avec ?touch=1 / ?touch=0 ---- */
+const _tq=new URLSearchParams(location.search).get("touch");
+const TOUCH=_tq==="1"||(_tq!=="0"&&(matchMedia("(any-pointer: coarse)").matches||navigator.maxTouchPoints>0));
+document.body.classList.toggle("touch",TOUCH);
+if(TOUCH)searchInput.setAttribute("inputmode","none");
+let audio=audioCors;                      /* lecteur courant : audioCors (avec égaliseur) ou audioPlain (repli) */
+const noCors=new Set();                   /* flux dont le serveur n'autorise pas l'analyse audio */
+
+/* ---- Sauvegarde locale : mémoires, volume, égaliseur, dernière station ---- */
+const LS="autoradio.v1";
+let memSaved=new Array(MEMORY_COUNT).fill(null),volSaveT=null;
+function lsGet(){try{return JSON.parse(localStorage.getItem(LS)||"{}")||{}}catch(_){return{}}}
+function lsSet(patch){try{localStorage.setItem(LS,JSON.stringify(Object.assign(lsGet(),patch)))}catch(_){}}
+
+/* ---- Mise à l'échelle : la face avant (680×450) remplit la fenêtre ---- */
+const stage=$("stage");
+/* (fit() est appelée juste après) */
+let curScale=1;function fit(){
+  const W=innerWidth,H=innerHeight,sl=Math.min(W/750,H/400),sp=Math.min(W/420,H/760);
+  const por=TOUCH&&sp>sl*1.02;            /* téléphone en hauteur : disposition portrait */
+  document.body.classList.toggle("portrait",por);
+  const s=por?sp:sl;curScale=s;
+  stage.style.transform=`translate(-50%,-50%) scale(${s})`;
+}
+addEventListener("resize",fit);fit();
+
+for(let i=0;i<32;i++){const b=document.createElement("div");b.className="eq-bar";b.style.height="2px";eqEl.appendChild(b);bars.push(b)}
+Object.keys(EQ_PRESETS).forEach(name=>{const btn=document.createElement("button");btn.className="eq-btn"+(name==="FLAT"?" active":"");btn.dataset.eq=name;btn.textContent=name;btn.onclick=()=>{if(!audioCtx)initAnalyser();applyEqPreset(name)};$("eqPresets").appendChild(btn)});
+const quickEl=$("quickTags");
+QUICK.forEach(q=>{const btn=document.createElement("button");btn.className="tag";btn.textContent=q.label;btn.onclick=()=>{quickEl.querySelectorAll(".tag").forEach(b=>b.classList.remove("active"));btn.classList.add("active");quickSearch(q.type,q.value,q.label)};quickEl.appendChild(btn)});
+/* Flèches : clic = défile d'un cran, maintien = défilement continu */
+function bindTagScroll(btn,dir){
+  let hold=null,iv=null,held=false;
+  const stop=()=>{clearTimeout(hold);clearInterval(iv);hold=iv=null};
+  btn.addEventListener("pointerdown",e=>{held=false;e.preventDefault();hold=setTimeout(()=>{held=true;iv=setInterval(()=>{quickEl.scrollLeft+=dir*12},16)},350)});
+  ["pointerup","pointerleave","pointercancel"].forEach(ev=>btn.addEventListener(ev,stop));
+  btn.addEventListener("click",()=>{if(held){held=false;return}quickEl.scrollBy({left:dir*180,behavior:"smooth"})});
+}
+bindTagScroll($("tagLeft"),-1);bindTagScroll($("tagRight"),1);
+function updateTagArrows(){const max=quickEl.scrollWidth-quickEl.clientWidth;const l=quickEl.scrollLeft<=1,r=quickEl.scrollLeft>=max-1;$("tagLeft").classList.toggle("off",l);$("tagRight").classList.toggle("off",r);quickEl.classList.toggle("fl",!l);quickEl.classList.toggle("fr",!r)}
+quickEl.addEventListener("scroll",updateTagArrows);addEventListener("resize",updateTagArrows);setTimeout(updateTagArrows,150);
+quickEl.addEventListener("wheel",e=>{if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){quickEl.scrollLeft+=e.deltaY;e.preventDefault()}},{passive:false});
+
+function setNowPlaying(t){npTrack.textContent=t||"— — —"}
+function loadMemoriesFromList(){const src=stationList.length?stationList:PRESETS;for(let i=0;i<MEMORY_COUNT;i++){if(!memories[i]&&src[i])memories[i]=src[i]}}
+function renderPresets(){
+  loadMemoriesFromList();presetsEl.innerHTML="";
+  const per=TOUCH?10:MEMORY_COUNT,start=TOUCH?memPage*10:0;
+  if(TOUCH){
+    const pg=document.createElement("div");pg.className="mbtn pg";pg.title="Changer de page de mémoires";
+    pg.innerHTML=`<span class="n">${memPage+1}/2</span><span class="f">PAGE</span>`;
+    pg.onclick=()=>{memPage=1-memPage;renderPresets()};
+    presetsEl.appendChild(pg);
+  }
+  for(let i=start;i<start+per;i++){
+    const s=memories[i];const el=document.createElement("div");
+    el.className="mbtn"+(power&&activeMemory===i?" active":"")+(!s?" empty":"");
+    el.title=s?s.name+" — appui long ou double-clic : mémoriser la station en cours":"Appui long ou double-clic : mémoriser la station en cours";
+    el.innerHTML=`<span class="n">${i+1}</span><span class="f">${s?esc(s.freq||"M"+(i+1)):"—"}</span>`;
+    const save=()=>{if(!power||!current)return;memories[i]={...current};memSaved[i]={...current};lsSet({mem:memSaved});activeMemory=i;renderPresets();setNowPlaying("M"+(i+1)+" SAVED");setTimeout(()=>setNowPlaying(current.tags?current.tags.toUpperCase():current.name),1200)};
+    let lp=null,lpFired=false;
+    el.addEventListener("pointerdown",e=>{lpFired=false;if(e.pointerType==="mouse")return;lp=setTimeout(()=>{lpFired=true;if(navigator.vibrate)navigator.vibrate(35);save()},650)});
+    ["pointerup","pointerleave","pointercancel"].forEach(ev=>el.addEventListener(ev,()=>clearTimeout(lp)));
+    el.onclick=()=>{if(lpFired){lpFired=false;return}if(!power||!s)return;activeMemory=i;selectStation(s);if(!playing)playCurrent();renderPresets()};
+    el.ondblclick=e=>{e.preventDefault();save()};
+    presetsEl.appendChild(el)
+  }
+}
+function renderStationBand(){/* la bande horizontale est remplacée par la liste intégrée */}
+function updateListActive(){
+  const idx=stationList.indexOf(current);
+  [...resultsEl.querySelectorAll(".ritem")].forEach((el,i)=>{const on=i===idx;el.classList.toggle("active",on);if(on)el.scrollIntoView({block:"nearest"})});
+}
+function renderResults(list,title){
+  stationList=list;panelTitle.textContent=title||"Stations";panelCount.textContent=list.length?list.length+" stations":"";
+  resultsEl.innerHTML="";
+  if(!list.length){resultsEl.innerHTML='<div class="empty">Aucune station</div>';renderPresets();return}
+  list.forEach(s=>{
+    const item=document.createElement("div");item.className="ritem"+(s===current?" active":"");
+    item.innerHTML=`<span class="rn">${esc(s.name)}</span><span class="rc">${esc(s.country||"")} ${esc(s.tags||"")}</span>`;
+    item.onclick=()=>{if(!power)powerOn();selectStation(s);if(!playing)playCurrent()};
+    resultsEl.appendChild(item)
+  });
+  renderPresets();
+}
+function selectStation(s){
+  current=s;currentBand=s.band||currentBand;lsSet({last:{name:s.name,url:s.url,freq:s.freq,country:s.country,band:s.band,tags:s.tags}});
+  freqEl.textContent=s.freq||"—";snameEl.textContent=(s.name||"UNKNOWN").toUpperCase();tuneVal.textContent=s.freq||"—";
+  bandMeta.textContent=(currentBand==="dab"?"DAB+":currentBand.toUpperCase())+(currentBand==="am"?"":" STEREO");
+  setNowPlaying("…");
+  activeMemory=memories.findIndex(m=>m&&m.url===s.url);if(TOUCH&&activeMemory>=0)memPage=Math.floor(activeMemory/10);
+  document.querySelectorAll(".band").forEach(b=>b.classList.toggle("active",b.dataset.band===currentBand));
+  renderPresets();updateListActive();
+  if(power&&playing)playCurrent();else if(power)audio.src=s.url;
+}
+function stepStation(d){
+  if(!power)powerOn();
+  const n=stationList.length;if(!n)return;
+  const i=stationList.indexOf(current);
+  const next=stationList[((i<0?0:i)+d+n)%n];
+  if(next){selectStation(next);if(!playing)playCurrent()}
+}
+let eqRunning=false,eqPhase=0,useFakeEQ=false,silentFrames=0;
+
+function useAudio(el){
+  if(audio===el)return;
+  try{audio.pause();audio.removeAttribute("src");audio.load()}catch(_){}
+  audio=el;audio.volume=volume;
+}
+function playCurrent(retried){
+  if(!current?.url)return;
+  const plain=noCors.has(current.url);
+  useAudio(plain?audioPlain:audioCors);
+  audio.src=current.url;audio.volume=volume;
+  setNowPlaying("Connexion…");
+  audio.play().then(()=>{
+    playing=true;playBtn.classList.add("on");playBtn.textContent="❚❚";
+    statusEl.textContent="ON AIR";statusEl.classList.add("on");
+    if(!plain)initAnalyser();
+    startEQ();
+    setNowPlaying(current.tags?current.tags.toUpperCase():current.name);
+    if("mediaSession" in navigator){try{navigator.mediaSession.metadata=new MediaMetadata({title:current.name,artist:"Autoradio",album:[current.freq,current.country].filter(Boolean).join(" · "),artwork:[{src:"icon-192.png",sizes:"192x192",type:"image/png"},{src:"icon-512.png",sizes:"512x512",type:"image/png"}]})}catch(_){}}
+  }).catch(()=>{
+    /* flux sans en-têtes CORS : on le relit sans égaliseur plutôt que d'échouer */
+    if(!plain&&!retried){noCors.add(current.url);playCurrent(true);return}
+    snameEl.textContent="SIGNAL WEAK";setNowPlaying("Unavailable");
+    setTimeout(()=>{snameEl.textContent=current.name.toUpperCase();setNowPlaying("— — —")},2000);
+  });
+}
+function initAnalyser(){
+  try{
+    if(!audioCtx){
+      audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+      analyser=audioCtx.createAnalyser();analyser.fftSize=128;analyser.smoothingTimeConstant=.55;
+      try{
+        sourceNode=audioCtx.createMediaElementSource(audioCors);
+        eqFilters=EQ_FREQS.map(freq=>{const f=audioCtx.createBiquadFilter();f.type="peaking";f.frequency.value=freq;f.Q.value=1.1;f.gain.value=0;return f});
+        let node=sourceNode;eqFilters.forEach(f=>{node.connect(f);node=f});
+        node.connect(analyser);analyser.connect(audioCtx.destination);
+      }catch(err){console.warn("MediaSource:",err);useFakeEQ=true}
+      dataArray=new Uint8Array(analyser.frequencyBinCount);
+      applyEqPreset(currentEq);
+    }
+    if(audioCtx.state==="suspended")audioCtx.resume();
+  }catch(e){console.warn(e);useFakeEQ=true}
+}
+function applyEqPreset(name){
+  currentEq=name;const gains=EQ_PRESETS[name]||EQ_PRESETS.FLAT;
+  if(eqFilters.length&&audioCtx)eqFilters.forEach((f,i)=>f.gain.setTargetAtTime(gains[i]||0,audioCtx.currentTime,.05));
+  document.querySelectorAll(".eq-btn").forEach(b=>b.classList.toggle("active",b.dataset.eq===name));const _en=$("eqName");if(_en)_en.textContent=name;lsSet({eq:name});
+}
+function startEQ(){if(eqRunning)return;eqRunning=true;silentFrames=0;useFakeEQ=false;drawEQ()}
+function stopEQ(){eqRunning=false;bars.forEach(b=>{b.style.height="2px"})}
+function drawEQ(){
+  if(!eqRunning||!power||!playing){eqRunning=false;bars.forEach(b=>{b.style.height="2px"});return}
+  requestAnimationFrame(drawEQ);eqPhase+=.12;
+  let levels=[];
+  if(analyser&&dataArray&&!useFakeEQ){
+    analyser.getByteFrequencyData(dataArray);
+    const step=Math.max(1,Math.floor(dataArray.length/bars.length));let sum=0;
+    for(let i=0;i<bars.length;i++){const v=dataArray[Math.min(i*step,dataArray.length-1)]||0;levels.push(v);sum+=v}
+    if(sum<30){silentFrames++;if(silentFrames>25)useFakeEQ=true}else silentFrames=0;
+  }
+  if(useFakeEQ||!analyser){
+    levels=bars.map((_,i)=>{
+      const base=Math.sin(eqPhase*1.1+i*.45)*.35+Math.sin(eqPhase*.7+i*.2)*.25;
+      const pulse=Math.sin(eqPhase*2.2+i*.9)*.2;
+      return Math.max(0,Math.min(255,(.45+base+pulse)*200+Math.random()*40));
+    });
+  }
+  levels.forEach((v,i)=>{
+    const h=Math.max(2,(v/255)*32);bars[i].style.height=h+"px";
+    if(h>24)bars[i].style.background="linear-gradient(to top,#5a1a1a,#ff5a6a)";
+    else if(h>14)bars[i].style.background="linear-gradient(to top,#5a3a10,#ffc45c)";
+    else bars[i].style.background="linear-gradient(to top,#0a3a22,#4dffa8)";
+  });
+}
+function powerOn(){power=true;pwrBtn.classList.add("on");statusEl.textContent="READY";statusEl.classList.add("on");selectStation(current)}
+function powerOff(){power=false;playing=false;pwrBtn.classList.remove("on");playBtn.classList.remove("on");playBtn.textContent="▶";audio.pause();audio.src="";statusEl.textContent="OFF";statusEl.classList.remove("on");snameEl.textContent="— STANDBY —";freqEl.textContent="88.5";setNowPlaying("— — —");stopEQ();renderPresets()}
+pwrBtn.onclick=()=>power?powerOff():powerOn();
+playBtn.onclick=()=>{
+  if(!power){powerOn();setTimeout(playCurrent,150);return}
+  if(playing){audio.pause();playing=false;playBtn.classList.remove("on");playBtn.textContent="▶";statusEl.textContent="PAUSED";stopEQ()}
+  else playCurrent();
+};
+$("prevBtn").onclick=()=>stepStation(-1);
+$("nextBtn").onclick=()=>stepStation(1);
+
+/* ---- Boutons rotatifs : glisser (doigt, stylet ou souris) ou molette ---- */
+const volKnob=$("volKnob"),tuneKnob=$("tuneKnob");let tuneAccum=0,tuneAngle=0;
+function setVolume(v){volume=Math.max(0,Math.min(1,v));audio.volume=volume;volVal.textContent=Math.round(volume*100);clearTimeout(volSaveT);volSaveT=setTimeout(()=>lsSet({vol:volume}),300);volKnob.style.transform=`rotate(${-140+volume*280}deg)`}
+function turnTune(d){tuneAngle+=d*24;tuneKnob.style.transform=`rotate(${tuneAngle}deg)`}
+function dragKnob(el,onMove,onStart){
+  let id=null,y0=0;
+  el.addEventListener("pointerdown",e=>{id=e.pointerId;y0=e.clientY;if(onStart)onStart();try{el.setPointerCapture(id)}catch(_){}e.preventDefault()});
+  el.addEventListener("pointermove",e=>{if(e.pointerId!==id)return;const dy=(e.clientY-y0)/curScale;y0=e.clientY;onMove(dy)});
+  const end=e=>{if(e.pointerId===id)id=null};
+  ["pointerup","pointercancel","lostpointercapture"].forEach(ev=>el.addEventListener(ev,end));
+}
+dragKnob(volKnob,dy=>setVolume(volume-dy*.008));
+dragKnob(tuneKnob,dy=>{if(!power)return;tuneAccum+=dy;const th=TOUCH?22:16;if(Math.abs(tuneAccum)>th){const d=tuneAccum<0?1:-1;stepStation(d);turnTune(d);tuneAccum=0}},()=>{tuneAccum=0});
+volKnob.addEventListener("wheel",e=>{e.preventDefault();setVolume(volume+(e.deltaY<0?.05:-.05))},{passive:false});
+tuneKnob.addEventListener("wheel",e=>{e.preventDefault();if(!power)return;const d=e.deltaY<0?1:-1;stepStation(d);turnTune(d)},{passive:false});
+setVolume(volume);
+
+document.querySelectorAll(".band").forEach(btn=>{btn.onclick=()=>{
+  currentBand=btn.dataset.band;
+  document.querySelectorAll(".band").forEach(b=>b.classList.remove("active"));btn.classList.add("active");
+  const filtered=PRESETS.filter(s=>currentBand==="world"||s.band===currentBand);
+  renderResults(filtered.length?filtered:PRESETS,currentBand==="dab"?"DAB+":currentBand.toUpperCase());
+  if(filtered.length){current=filtered[0];if(power)selectStation(current)}
+}});
+
+/* ---- Radio Browser ---- */
+const APIS=["https://de1.api.radio-browser.info/json","https://nl1.api.radio-browser.info/json","https://at1.api.radio-browser.info/json"];
+let apiIdx=0;
+async function apiFetch(path){
+  let lastErr;
+  for(let k=0;k<APIS.length;k++){
+    const i=(apiIdx+k)%APIS.length;
+    try{const res=await fetch(APIS[i]+path);if(!res.ok)throw new Error("API");const data=await res.json();apiIdx=i;return data}
+    catch(e){lastErr=e}
+  }
+  throw lastErr;
+}
+/* page en https : un flux http serait bloqué, on essaie sa version https */
+const SECURE=location.protocol==="https:";
+function secureUrl(u){return SECURE&&/^http:\/\//i.test(u)?"https://"+u.slice(7):u}
+function mapStations(list){return(list||[]).filter(s=>(s.url_resolved||s.url)&&s.lastcheckok!==0).map(s=>({name:(s.name||"Unknown").trim(),url:secureUrl(s.url_resolved||s.url),freq:s.bitrate?s.bitrate+"k":"—",country:s.countrycode||s.country||"",band:"world",tags:(s.tags||"").split(",").map(t=>t.trim()).filter(Boolean).slice(0,3).join(" · ")}))}
+async function searchStations(query){
+  const q=(query||"").trim();if(q.length<1)return;
+  searchBtn.disabled=true;searchBtn.textContent="…";resultsEl.innerHTML='<div class="loading">Recherche…</div>';panelTitle.textContent=q;
+  try{
+    const enc=encodeURIComponent(q);
+    const[byName,byTag,byCountry]=await Promise.all([
+      apiFetch(`/stations/search?name=${enc}&hidebroken=true&order=clickcount&reverse=true&limit=40`),
+      apiFetch(`/stations/search?tag=${enc}&hidebroken=true&order=clickcount&reverse=true&limit=30`),
+      apiFetch(`/stations/search?country=${enc}&hidebroken=true&order=clickcount&reverse=true&limit=20`)]);
+    const seen=new Set();const merged=[];
+    for(const list of[byName,byTag,byCountry]){for(const s of(list||[])){if(!seen.has(s.stationuuid)&&(s.url_resolved||s.url)){seen.add(s.stationuuid);merged.push(s)}}}
+    merged.sort((a,b)=>(b.clickcount||0)-(a.clickcount||0));
+    const mapped=mapStations(merged).slice(0,50);
+    if(!mapped.length)resultsEl.innerHTML=`<div class="empty">Rien pour « ${esc(q)} »</div>`;else renderResults(mapped,q);
+  }catch{resultsEl.innerHTML='<div class="empty">Erreur réseau</div>'}
+  finally{searchBtn.disabled=false;searchBtn.textContent="GO"}
+}
+async function quickSearch(type,value,label){
+  resultsEl.innerHTML='<div class="loading">…</div>';panelTitle.textContent=label;
+  try{
+    let data;
+    if(type==="tag")data=await apiFetch(`/stations/search?tag=${encodeURIComponent(value)}&hidebroken=true&order=clickcount&reverse=true&limit=40`);
+    else if(type==="country")data=await apiFetch(`/stations/search?countrycode=${encodeURIComponent(value)}&hidebroken=true&order=clickcount&reverse=true&limit=40`);
+    else if(type==="top")data=await apiFetch(`/stations/topclick?limit=30&hidebroken=true`);
+    else data=await apiFetch(`/stations/search?name=${encodeURIComponent(value)}&hidebroken=true&order=clickcount&reverse=true&limit=30`);
+    renderResults(mapStations(data).slice(0,40),label);
+  }catch{resultsEl.innerHTML='<div class="empty">Erreur réseau</div>'}
+}
+searchBtn.onclick=()=>searchStations(searchInput.value);
+searchInput.onkeydown=e=>{if(e.key==="Enter")searchStations(searchInput.value)};
+
+/* ---- Égaliseur tactile : ‹ nom › ---- */
+const EQN=Object.keys(EQ_PRESETS);
+function cycleEq(d){if(!audioCtx)initAnalyser();const i=EQN.indexOf(currentEq);applyEqPreset(EQN[(i+d+EQN.length)%EQN.length])}
+$("eqPrev").onclick=()=>cycleEq(-1);$("eqNext").onclick=()=>cycleEq(1);
+
+/* ---- Clavier AZERTY à l'écran (mode tactile) ---- */
+const kbd=$("kbd");
+function openKbd(){kbd.classList.add("open");document.body.classList.add("kbd-open")}
+function closeKbd(){kbd.classList.remove("open");document.body.classList.remove("kbd-open")}
+function typeKey(k){if(k==="⌫")searchInput.value=searchInput.value.slice(0,-1);else searchInput.value+=k.toLowerCase()}
+if(TOUCH){
+  [["1","2","3","4","5","6","7","8","9","0"],["A","Z","E","R","T","Y","U","I","O","P"],["Q","S","D","F","G","H","J","K","L","M"],["W","X","C","V","B","N","-","⌫"]].forEach(r=>{
+    const row=document.createElement("div");row.className="krow";
+    r.forEach(k=>{const b=document.createElement("button");b.className="key"+(k==="⌫"?" wide":"");b.textContent=k;b.onclick=()=>typeKey(k);row.appendChild(b)});
+    kbd.appendChild(row);
+  });
+  const last=document.createElement("div");last.className="krow";
+  last.innerHTML='<button class="key close" id="kClose">✕</button><button class="key space" id="kSpace">ESPACE</button><button class="key go" id="kGo">GO</button>';
+  kbd.appendChild(last);
+  $("kClose").onclick=closeKbd;$("kSpace").onclick=()=>typeKey(" ");
+  $("kGo").onclick=()=>{closeKbd();searchStations(searchInput.value)};
+  searchInput.addEventListener("pointerdown",e=>{if(e.pointerType!=="mouse"){e.preventDefault();openKbd()}});
+  searchBtn.addEventListener("click",closeKbd);
+}
+addEventListener("contextmenu",e=>{if(e.target.tagName!=="INPUT")e.preventDefault()});
+
+/* ---- Restauration des réglages enregistrés ---- */
+(function restore(){
+  const d=lsGet();
+  if(Array.isArray(d.mem))d.mem.forEach((m,i)=>{if(m&&m.url&&i<MEMORY_COUNT){memories[i]=m;memSaved[i]=m}});
+  if(typeof d.vol==="number")setVolume(d.vol);
+  if(d.eq&&EQ_PRESETS[d.eq]){currentEq=d.eq;const n=$("eqName");if(n)n.textContent=d.eq;document.querySelectorAll(".eq-btn").forEach(b=>b.classList.toggle("active",b.dataset.eq===d.eq))}
+  if(d.last&&d.last.url){current=d.last;currentBand=d.last.band||currentBand}
+})();
+
+/* ---- Commandes de l'écran de verrouillage / casque ---- */
+if("mediaSession" in navigator){
+  const ms=(a,f)=>{try{navigator.mediaSession.setActionHandler(a,f)}catch(_){}};
+  ms("play",()=>{if(!playing)playBtn.click()});
+  ms("pause",()=>{if(playing)playBtn.click()});
+  ms("nexttrack",()=>stepStation(1));
+  ms("previoustrack",()=>stepStation(-1));
+}
+/* iOS : le contexte audio doit être créé pendant un geste de l'utilisateur */
+addEventListener("pointerdown",()=>{initAnalyser()},{once:true,capture:true});
+/* Application installable + interface disponible hors ligne */
+if("serviceWorker" in navigator&&/^https?:$/.test(location.protocol)){
+  addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})});
+}
+
+renderResults(PRESETS,"Stations");audio.volume=volume;
+let t=0;const boot=setInterval(()=>{bars.forEach((b,i)=>{b.style.height=(2+Math.abs(Math.sin(t+i*.4))*22)+"px"});t+=.3;if(t>12){clearInterval(boot);bars.forEach(b=>b.style.height="2px")}},40);
+</script>
+</body>
+</html>
